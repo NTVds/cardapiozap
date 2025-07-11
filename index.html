@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cardápio Virtual</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #ff0033;
+      text-shadow: 0 0 10px #fff;
+    }
+    .categoria {
+      margin-bottom: 30px;
+      padding: 15px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0;
+    }
+    .item span {
+      flex: 1;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+    }
+    .controls button {
+      background: #ff0033;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      margin: 0 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .controls input {
+      width: 40px;
+      text-align: center;
+      background: #000;
+      color: #fff;
+      border: none;
+      font-size: 16px;
+    }
+    #total {
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 18px;
+      text-align: center;
+      color: #fff;
+    }
+    button[type="submit"] {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      background: #ff0033;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      text-shadow: 0 0 5px #fff;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cardápio Virtual</h1>
+  <form id="pedidoForm"></form>
+  <script>
+    const categorias = [
+      {
+        nome: 'Lanches',
+        produtos: [
+          { nome: 'Bauru simples', preco: 7 },
+          { nome: 'X-Tudo', preco: 12 },
+          { nome: 'Sertanejo', preco: 11 },
+          { nome: 'X-Frango', preco: 10 },
+          { nome: 'X-Bacon', preco: 10 },
+          { nome: 'Misto', preco: 5 },
+          { nome: 'Torrada', preco: 4 },
+        ]
+      },
+      {
+        nome: 'Sucos 300ml',
+        produtos: [
+          { nome: 'Goiaba', preco: 4 },
+          { nome: 'Cajá', preco: 4 },
+          { nome: 'Acerola', preco: 4 },
+          { nome: 'Caju', preco: 4 },
+          { nome: 'Graviola', preco: 4 },
+          { nome: 'Uva', preco: 5 },
+          { nome: 'Murici', preco: 5 },
+          { nome: 'Mangaba', preco: 4 },
+        ]
+      },
+      {
+        nome: 'Vitaminas',
+        produtos: [
+          { nome: 'Abacate', preco: 7 },
+          { nome: 'Goiaba', preco: 6 },
+          { nome: 'Banana', preco: 6 },
+          { nome: 'Cajá', preco: 6 },
+          { nome: 'Acerola', preco: 6 },
+          { nome: 'Uva', preco: 6 },
+        ]
+      }
+    ];const form = document.getElementById('pedidoForm');
+
+categorias.forEach(categoria => {
+  const div = document.createElement('div');
+  div.className = 'categoria';
+  div.innerHTML = `<h3>${categoria.nome}</h3>`;
+
+  categoria.produtos.forEach(produto => {
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.innerHTML = `
+      <span>${produto.nome} (R$${produto.preco.toFixed(2)})</span>
+      <div class="controls">
+        <button type="button" onclick="alterarQtd(this, -1)">-</button>
+        <input type="number" name="${produto.nome}" data-preco="${produto.preco}" value="0" min="0">
+        <button type="button" onclick="alterarQtd(this, 1)">+</button>
+      </div>
+    `;
+    div.appendChild(item);
+  });
+
+  form.appendChild(div);
+});
+
+form.innerHTML += `
+  <label>Nome:<input type="text" id="nome" required></label>
+  <label>Endereço:<input type="text" id="endereco" required></label>
+  <p id="total">Total: R$ 0,00</p>
+  <button type="submit">Enviar Pedido via WhatsApp</button>
+`;
+
+function alterarQtd(btn, delta) {
+  const input = btn.parentElement.querySelector('input');
+  let val = parseInt(input.value) || 0;
+  val = Math.max(0, val + delta);
+  input.value = val;
+  calcularTotal();
+}
+
+function calcularTotal() {
+  const inputs = form.querySelectorAll('input[type="number"]');
+  let total = 0;
+  inputs.forEach(input => {
+    const qtd = parseInt(input.value) || 0;
+    const preco = parseFloat(input.dataset.preco);
+    total += qtd * preco;
+  });
+  document.getElementById('total').textContent = `Total: R$ ${total.toFixed(2)}`;
+}
+
+form.addEventListener('input', calcularTotal);
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  let mensagem = '*Pedido:*\n';
+  const inputs = form.querySelectorAll('input[type="number"]');
+  inputs.forEach(input => {
+    const qtd = parseInt(input.value);
+    if (qtd > 0) {
+      mensagem += `${input.name} x${qtd}\n`;
+    }
+  });
+  const nome = document.getElementById('nome').value;
+  const endereco = document.getElementById('endereco').value;
+  const total = document.getElementById('total').textContent.split(': ')[1];
+  mensagem += `\n*Nome:* ${nome}\n*Endereço:* ${endereco}\n*Total:* ${total}`;
+
+  const fone = '5584988507804';
+  const link = `https://wa.me/${fone}?text=${encodeURIComponent(mensagem)}`;
+  window.open(link, '_blank');
+});
+
+  </script>
+</body>
+</html>
